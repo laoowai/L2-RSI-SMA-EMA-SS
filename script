@@ -48,12 +48,12 @@ obvSMA = sma(obv, obvPeriod)
 // New variable for ATR-based Stop Loss
 var float atrStopLossLevel = na
 
-// Calculate ATR-based Stop Loss
+// Calculate ATR-based Stop Loss and assign the value directly
 atrValue = atr(atrLength)
-if (strategy.position_size != 0)
-  atrStopLossLevel := close - atrMultiplier * atrValue
-else
-  atrStopLossLevel := na
+atrStopLossLevel := strategy.position_size != 0 ? close - atrMultiplier * atrValue : close
+
+// Update stop loss to the maximum of percentage-based stop loss and ATR-based stop loss
+stopLossLevel := max(stopLossLevel, atrStopLossLevel)
 
 // Calculate stop loss and take profit levels
 if (strategy.position_size != 0)

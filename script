@@ -108,10 +108,12 @@ shortCondition = crossunder(rsi, rsiOverBoughtLevel) and crossunder(ema1, ema2) 
 // Update stop loss to the maximum of percentage-based stop loss and ATR-based stop loss
 stopLossLevel := max(stopLossLevel, atrStopLossLevel)
 
-// Update the strategy to use Trailing Stop
-strategy.exit("Sell", "Buy", trail_points = trailingStop)
-
 if (longCondition)
     strategy.entry("Buy", strategy.long)
 if (shortCondition)
-    strategy.short("Sell", strategy.short)
+    strategy.entry("Sell", strategy.short)
+    
+// Update the strategy to use Trailing Stop
+strategy.exit("Sell", "Buy", trail_points = trailingStop)
+
+

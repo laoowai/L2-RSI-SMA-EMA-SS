@@ -1,0 +1,89 @@
+//@version=4
+strategy("[laoowai] L2 RSI/SMA/EMA/SS", overlay=false, max_bars_back=5000)
+
+// Inputs
+maLength1 = input(3, title="n1", type=input.integer, minval = 1)
+maLength2 = input(6, title="n2", type=input.integer, minval = 1)
+rsiPeriod = input(14, title="RSI Period", type=input.integer, minval = 1)
+smaPeriod = input(3, title="SMA Period", type=input.integer, minval = 1)
+typicalPricePeriod = input(15, title="Typical Price Period", type=input.integer, minval = 1)
+stochasticPeriod = input(18, title="Stochastic Period", type=input.integer, minval = 1)
+stochasticSmoothing1 = input(9, title="Stochastic Smoothing 1", type=input.integer, minval = 1)
+stochasticSmoothing2 = input(3, title="Stochastic Smoothing 2", type=input.integer, minval = 1)
+resistancePeriod = input(60, title="Resistance Period", type=input.integer, minval = 1)
+emaClosePeriod = input(14, title="EMA Close Period", type=input.integer, minval = 1)
+overBoughtLevel = input(98, title="Overbought Level", type=input.integer, minval = 1)
+overSoldLevel = input(2, title="Oversold Level", type=input.integer, minval = 1)
+neutralLevel = input(50, title="Neutral Level", type=input.integer, minval = 1)
+rsiOverBoughtLevel = input(70, title="RSI Overbought Level", type=input.integer, minval = 1)
+rsiOverSoldLevel = input(30, title="RSI Oversold Level", type=input.integer, minval = 1)
+
+// Declare the variable at the beginning of your script
+var float percentagePnL = na
+
+if (strategy.position_size > 0)
+    percentagePnL := (close - strategy.position_avg_price) / strategy.position_avg_price * 100
+else if (strategy.position_size < 0)
+    percentagePnL := (strategy.position_avg_price - close) / strategy.position_avg_price * 100
+else
+    percentagePnL := na
+
+// Close position when PnL is more than 15%
+if (not na(percentagePnL) and percentagePnL > 15)
+    strategy.close("Buy")
+else if (not na(percentagePnL) and percentagePnL > 15)
+    strategy.close("Sell")
+
+// Calculate RSI
+rsi = rsi(close, rsiPeriod)
+
+// Custom Functions
+fillNA(values, length) => na(values[length]) ? values : values[length]
+smoothedAverage(src,len,wei) => sma(src, len)
+countConditionOccurrences(cond, len) => sum(cond ? 1 : 0, len)
+existsCondition(cond, len) => sum(cond ? 1 : 0, len) > 0
+
+// Calculations
+basicMA = sma(close,smaPeriod)
+typicalPrice = (high+low+close)/3
+highestPrice = highest(typicalPrice,typicalPricePeriod)
+lowestPrice = lowest(typicalPrice,typicalPricePeriod)
+priceRange = highestPrice-lowestPrice
+pricePercentage = sma((typicalPrice-lowestPrice)/priceRange,2)*100
+percentChange = (close-fillNA(close,1))/fillNA(close,1)*100
+stochastic = (close-lowest(low,stochasticPeriod))/(highest(high,stochasticPeriod)-lowest(low,stochasticPeriod))*100
+smoothedStochastic = smoothedAverage(stochastic,stochasticSmoothing1,1)
+doubleSmoothedStochastic = smoothedAverage(smoothedStochastic,stochasticSmoothing2,1)
+oscillator = 3*smoothedStochastic-2*doubleSmoothedStochastic
+
+// Renamed 'smoothedStochastic' to 'emaBase'
+emaBase = sma(close, emaClosePeriod)
+ema1 = ema(emaBase, maLength1)
+ema2 = ema(ema1, maLength1)
+ema3 = ema(ema2, maLength1)
+ema4 = ema(ema3, maLength1)
+
+smoothedEMA = ceil(ema(ema4,maLength2))
+smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1
+plotcandle(ema2, oscillator, ema2, oscillator, color=oscillator>=ema2?color.yellow:color.fuchsia)
+resistance = highest(oscillator,resistancePeriod)
+support = lowest(oscillator,smoothedEMA)
+plot(resistance,color=color.new(color.red,40), linewidth=2, style=plot.style_circles)
+plot(support,color=color.new(color.green,40), linewidth=2, style=plot.style_circles)
+hline(overBoughtLevel)
+hline(overSoldLevel)
+hline(neutralLevel)
+longCondition = crossover(pricePercentage,overSoldLevel) and existsCondition(oscillator==support, 3)
+shortCondition = crossunder(pricePercentage,overBoughtLevel) and existsCondition(oscillator==resistance, 3)
+RSIBuy = crossover(pricePercentage,overSoldLevel) and existsCondition(oscillator==support, 3) and rsi < rsiOverSoldLevel
+RSISell = crossunder(pricePercentage,overBoughtLevel) and existsCondition(oscillator==resistance, 3) and rsi > rsiOverBoughtLevel
+
+if (RSIBuy)
+    strategy.entry("Buy", strategy.long)
+    strategy.order("Increase Buy", strategy.long, qty=2)
+
+if (RSISell)
+    strategy.entry("Sell", strategy.short)
+    strategy.order("Increase Sell", strategy.short, qty=2)
+
+

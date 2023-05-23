@@ -36,7 +36,12 @@ else
     percentagePnL := na
     
 // Additional OBV calculation
-obv = obv(close, volume)
+var float obv = na
+if (na(obv[1]))
+    obv := volume
+else
+    obv := close > close[1] ? obv[1] + volume : close < close[1] ? obv[1] - volume : obv[1]
+
 obvSMA = sma(obv, obvPeriod)
 
 // Calculate stop loss and take profit levels

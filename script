@@ -1,5 +1,5 @@
 //@version=4
-strategy("[laoowai] L2 RSI/SMA/EMA/SS", overlay=false, max_bars_back=5000)
+strategy("[laoowai] L2 RSI/SMA/EMA/SS Modified", overlay=true, max_bars_back=2000)
 
 // Inputs
 maLength1 = input(3, title="n1", type=input.integer, minval = 1)
@@ -17,9 +17,13 @@ overSoldLevel = input(2, title="Oversold Level", type=input.integer, minval = 1)
 neutralLevel = input(50, title="Neutral Level", type=input.integer, minval = 1)
 rsiOverBoughtLevel = input(70, title="RSI Overbought Level", type=input.integer, minval = 1)
 rsiOverSoldLevel = input(30, title="RSI Oversold Level", type=input.integer, minval = 1)
+stopLossPercentage = input(5, title="Stop Loss Percentage", type=input.integer, minval = 1)
+takeProfitPercentage = input(15, title="Take Profit Percentage", type=input.integer, minval = 1)
 
 // Declare the variable at the beginning of your script
 var float percentagePnL = na
+var float stopLossLevel = na
+var float takeProfitLevel = na
 
 if (strategy.position_size > 0)
     percentagePnL := (close - strategy.position_avg_price) / strategy.position_avg_price * 100
@@ -28,8 +32,26 @@ else if (strategy.position_size < 0)
 else
     percentagePnL := na
 
-// Close position when PnL is more than 15%
-if (not na(percentagePnL) and percentagePnL > 15)
+// Calculate stop loss and take profit levels
+if (strategy.position_size != 0)
+    stopLossLevel := strategy.position_avg_price * (1 - stopLossPercentage/100)
+    takeProfitLevel := strategy.position_avg_price * (1 + takeProfitPercentage/100)
+else
+    stopLossLevel := na
+    takeProfitLevel := na
+
+// Close position when PnL reaches stop loss or take profit
+if (not na(percentagePnL) and (percentagePnL <= -stopLossPercentage or percentagePnL >= takeProfitPercentage
+
+quote("if (not na(percentagePnL) and (percentagePnL <= -stopLossPercentage or percentagePnL >= takeProfitPercentage", "strategy.close(\"Sell\")")
+
+quote("// Calculate RSI", "rsi = rsi(close, rsiPeriod)")
+
+quote("// Custom Functions", "existsCondition(cond, len) => sum(cond ? 1 : 0, len) > 0")
+
+quote("// Calculations", "oscillator = 3*smoothedStochastic-2*doubleSmoothedStochastic")
+
+quote("// Renamed 'smoothedStochastic' to 'emaBase'", "smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1")
     strategy.close("Buy")
 else if (not na(percentagePnL) and percentagePnL > 15)
     strategy.close("Sell")
@@ -65,25 +87,12 @@ ema4 = ema(ema3, maLength1)
 
 smoothedEMA = ceil(ema(ema4,maLength2))
 smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1
-plotcandle(ema2, oscillator, ema2, oscillator, color=oscillator>=ema2?color.yellow:color.fuchsia)
-resistance = highest(oscillator,resistancePeriod)
-support = lowest(oscillator,smoothedEMA)
-plot(resistance,color=color.new(color.red,40), linewidth=2, style=plot.style_circles)
-plot(support,color=color.new(color.green,40), linewidth=2, style=plot.style_circles)
-hline(overBoughtLevel)
-hline(overSoldLevel)
-hline(neutralLevel)
-longCondition = crossover(pricePercentage,overSoldLevel) and existsCondition(oscillator==support, 3)
-shortCondition = crossunder(pricePercentage,overBoughtLevel) and existsCondition(oscillator==resistance, 3)
-RSIBuy = crossover(pricePercentage,overSoldLevel) and existsCondition(oscillator==support, 3) and rsi < rsiOverSoldLevel
-RSISell = crossunder(pricePercentage,overBoughtLevel) and existsCondition(oscillator==resistance, 3) and rsi > rsiOverBoughtLevel
 
-if (RSIBuy)
+// Add conditions for entering and exiting trades
+longCondition = crossover(rsi, rsiOverSoldLevel) and crossover(ema1, ema2)
+shortCondition = crossunder(rsi, rsiOverBoughtLevel) and crossunder(ema1, ema2)
+
+if (longCondition)
     strategy.entry("Buy", strategy.long)
-    strategy.order("Increase Buy", strategy.long, qty=2)
-
-if (RSISell)
+if (shortCondition)
     strategy.entry("Sell", strategy.short)
-    strategy.order("Increase Sell", strategy.short, qty=2)
-
-

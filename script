@@ -117,19 +117,19 @@ shortCondition_obv = crossunder(obv, obvSMA)
 
 
 if (longCondition_rsi)
-    strategy.entry("Buy", strategy.long)
+    strategy.entry("Buy", strategy.long, comment = "l_rsi")
 if (shortCondition_rsi)
-    strategy.entry("Sell", strategy.short)
+    strategy.entry("Sell", strategy.short, comment = "s_rsi")
     
 if (longCondition_ema)
-    strategy.entry("Buy", strategy.long)
+    strategy.entry("Buy", strategy.long, comment = "l_ema")
 if (shortCondition_ema)
-    strategy.entry("Sell", strategy.short)
+    strategy.entry("Sell", strategy.short, comment = "s_ema")
     
 if (longCondition_obv)
-    strategy.entry("Buy", strategy.long)
+    strategy.entry("Buy", strategy.long, comment = "l_obv")
 if (shortCondition_obv)
-    strategy.entry("Sell", strategy.short)
+    strategy.entry("Sell", strategy.short, comment = "s_obv")
     
 // Update the strategy to use Trailing Stop
 strategy.exit("Sell", "Buy", trail_points = trailingStop)

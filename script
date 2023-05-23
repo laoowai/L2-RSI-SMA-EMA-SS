@@ -1,10 +1,11 @@
 //@version=4
 strategy("[laoowai] L2 RSI/SMA/EMA/SS Modified", overlay=true, max_bars_back=2000)  
 
-// New input for OBV period
-obvPeriod = input(10, title="OBV Period", type=input.integer, minval = 1)
-
 // Inputs
+atrLength = input(14, title="ATR Length", type=input.integer, minval = 1)
+atrMultiplier = input(1.5, title="ATR Multiplier", type=input.float)
+trailingStop = input(3, title="Trailing Stop", type=input.float)
+obvPeriod = input(10, title="OBV Period", type=input.integer, minval = 1)
 maLength1 = input(3, title="n1", type=input.integer, minval = 1)
 maLength2 = input(6, title="n2", type=input.integer, minval = 1)
 rsiPeriod = input(14, title="RSI Period", type=input.integer, minval = 1)
@@ -18,8 +19,8 @@ emaClosePeriod = input(14, title="EMA Close Period", type=input.integer, minval 
 overBoughtLevel = input(98, title="Overbought Level", type=input.integer, minval = 1)
 overSoldLevel = input(2, title="Oversold Level", type=input.integer, minval = 1)
 neutralLevel = input(50, title="Neutral Level", type=input.integer, minval = 1)
-rsiOverBoughtLevel = input(70, title="RSI Overbought Level", type=input.integer, minval = 1)
-rsiOverSoldLevel = input(30, title="RSI Oversold Level", type=input.integer, minval = 1)
+rsiOverBoughtLevel = input(80, title="RSI Overbought Level", type=input.integer, minval = 1)  
+rsiOverSoldLevel = input(20, title="RSI Oversold Level", type=input.integer, minval = 1)  
 stopLossPercentage = input(5, title="Stop Loss Percentage", type=input.integer, minval = 1)
 takeProfitPercentage = input(15, title="Take Profit Percentage", type=input.integer, minval = 1)
 
@@ -43,6 +44,16 @@ else
     obv := close > close[1] ? obv[1] + volume : close < close[1] ? obv[1] - volume : obv[1]
 
 obvSMA = sma(obv, obvPeriod)
+
+// New variable for ATR-based Stop Loss
+var float atrStopLossLevel = na
+
+// Calculate ATR-based Stop Loss
+atrValue = atr(atrLength)
+if (strategy.position_size != 0)
+  atrStopLossLevel := close - atrMultiplier * atrValue
+else
+  atrStopLossLevel := na
 
 // Calculate stop loss and take profit levels
 if (strategy.position_size != 0)
@@ -94,7 +105,13 @@ smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1
 longCondition = crossover(rsi, rsiOverSoldLevel) and crossover(ema1, ema2) and crossover(obv, obvSMA)
 shortCondition = crossunder(rsi, rsiOverBoughtLevel) and crossunder(ema1, ema2) and crossunder(obv, obvSMA)  
 
+// Update stop loss to the maximum of percentage-based stop loss and ATR-based stop loss
+stopLossLevel := max(stopLossLevel, atrStopLossLevel)
+
+// Update the strategy to use Trailing Stop
+strategy.exit("Sell", "Buy", trail_points = trailingStop)
+
 if (longCondition)
     strategy.entry("Buy", strategy.long)
 if (shortCondition)
-    strategy.entry("Sell", strategy.short)
+    strategy.short("Sell", strategy.short)

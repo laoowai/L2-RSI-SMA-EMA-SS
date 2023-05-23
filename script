@@ -31,11 +31,12 @@ var float takeProfitLevel = na
 
 if (strategy.position_size > 0)
     percentagePnL := (close - strategy.position_avg_price) / strategy.position_avg_price * 100
-else if (strategy.position_size < 0)
-    percentagePnL := (strategy.position_avg_price - close) / strategy.position_avg_price * 100
-else
-    percentagePnL := na
-    
+else 
+    if (strategy.position_size < 0)
+        percentagePnL := (strategy.position_avg_price - close) / strategy.position_avg_price * 100
+    else
+        percentagePnL := na
+
 // Additional OBV calculation
 var float obv = na
 if (na(obv[1]))
@@ -53,7 +54,8 @@ atrValue = atr(atrLength)
 atrStopLossLevel := strategy.position_size != 0 ? close - atrMultiplier * atrValue : close
 
 // Update stop loss to the maximum of percentage-based stop loss and ATR-based stop loss
-stopLossLevel := max(stopLossLevel, atrStopLossLevel)
+// stopLossLevel := max(stopLossLevel, atrStopLossLevel)
+stopLossLevel := strategy.position_avg_price * (1 - stopLossPercentage/100)
 
 // Calculate stop loss and take profit levels
 if (strategy.position_size != 0)
@@ -101,9 +103,6 @@ ema4 = ema(ema3, maLength1)
 smoothedEMA = ceil(ema(ema4,maLength2))
 smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1
 
-// Update stop loss to the maximum of percentage-based stop loss and ATR-based stop loss
-stopLossLevel := max(stopLossLevel, atrStopLossLevel)
-
 // Modify long and short conditions rsi
 longCondition_rsi = crossover(rsi, rsiOverSoldLevel) 
 shortCondition_rsi = crossunder(rsi, rsiOverBoughtLevel)   
@@ -122,12 +121,12 @@ if (longCondition_rsi)
 if (shortCondition_rsi)
     strategy.entry("Sell", strategy.short)
     
- if (longCondition_ema)
+if (longCondition_ema)
     strategy.entry("Buy", strategy.long)
 if (shortCondition_ema)
     strategy.entry("Sell", strategy.short)
     
- if (longCondition_obv)
+if (longCondition_obv)
     strategy.entry("Buy", strategy.long)
 if (shortCondition_obv)
     strategy.entry("Sell", strategy.short)

@@ -1,5 +1,8 @@
 //@version=4
-strategy("[laoowai] L2 RSI/SMA/EMA/SS Modified", overlay=true, max_bars_back=2000)
+strategy("[laoowai] L2 RSI/SMA/EMA/SS Modified", overlay=true, max_bars_back=2000)  
+
+// New input for OBV period
+obvPeriod = input(10, title="OBV Period", type=input.integer, minval = 1)
 
 // Inputs
 maLength1 = input(3, title="n1", type=input.integer, minval = 1)
@@ -31,6 +34,10 @@ else if (strategy.position_size < 0)
     percentagePnL := (strategy.position_avg_price - close) / strategy.position_avg_price * 100
 else
     percentagePnL := na
+    
+// Additional OBV calculation
+obv = obv(close, volume)
+obvSMA = sma(obv, obvPeriod)
 
 // Calculate stop loss and take profit levels
 if (strategy.position_size != 0)
@@ -78,9 +85,9 @@ ema4 = ema(ema3, maLength1)
 smoothedEMA = ceil(ema(ema4,maLength2))
 smoothedEMA := smoothedEMA>1 ? smoothedEMA : 1
 
-// Add conditions for entering and exiting trades
-longCondition = crossover(rsi, rsiOverSoldLevel) and crossover(ema1, ema2)
-shortCondition = crossunder(rsi, rsiOverBoughtLevel) and crossunder(ema1, ema2)
+// Modify long and short conditions
+longCondition = crossover(rsi, rsiOverSoldLevel) and crossover(ema1, ema2) and crossover(obv, obvSMA)
+shortCondition = crossunder(rsi, rsiOverBoughtLevel) and crossunder(ema1, ema2) and crossunder(obv, obvSMA)  
 
 if (longCondition)
     strategy.entry("Buy", strategy.long)

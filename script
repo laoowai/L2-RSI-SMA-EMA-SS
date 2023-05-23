@@ -134,4 +134,36 @@ if (shortCondition_obv)
 // Update the strategy to use Trailing Stop
 strategy.exit("Sell", "Buy", trail_points = trailingStop)
 
+// OBV and OBV SMA
+plot(obv, color=color.red, title="OBV")
+plot(obvSMA, color=color.green, title="OBV SMA")
 
+// ATR Stop Loss Level
+plot(atrStopLossLevel, color=color.purple, title="ATR Stop Loss Level")
+
+// RSI
+plot(rsi, color=color.blue, title="RSI")
+
+// SMA and EMA
+plot(basicMA, color=color.yellow, title="SMA")
+plot(ema1, color=color.orange, title="EMA1")
+plot(ema2, color=color.orange, title="EMA2")
+plot(ema3, color=color.orange, title="EMA3")
+plot(ema4, color=color.orange, title="EMA4")
+
+// Stochastic and Smoothed Stochastic
+plot(stochastic, color=color.fuchsia, title="Stochastic")
+plot(smoothedStochastic, color=color.black, title="Smoothed Stochastic")
+
+// Oscillator
+plot(oscillator, color=color.maroon, title="Oscillator")
+
+// Smoothed EMA
+plot(smoothedEMA, color=color.aqua, title="Smoothed EMA")
+
+plotshape(series=longCondition_rsi, color=color.green, style=shape.labelup, title="Long Condition RSI")
+plotshape(series=shortCondition_rsi, color=color.red, style=shape.labeldown, title="Short Condition RSI")
+plotshape(series=longCondition_ema, color=color.green, style=shape.labelup, title="Long Condition EMA")
+plotshape(series=shortCondition_ema, color=color.red, style=shape.labeldown, title="Short Condition EMA")
+plotshape(series=longCondition_obv, color=color.green, style=shape.labelup, title="Long Condition OBV")
+plotshape(series=shortCondition_obv, color=color.red, style=shape.labeldown, title="Short Condition OBV")
